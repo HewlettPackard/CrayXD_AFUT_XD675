@@ -15,7 +15,7 @@ from ansible.module_utils.urls import open_url, prepare_multipart
 from ansible.module_utils.six.moves.urllib.error import URLError, HTTPError
 import configparser
 
-supported_models=["XD675"]
+supported_models=["XD675", "MIRAMAR"]
 #supported_models=["HPE CRAY XD220V", "HPE CRAY SC XD220V", "HPE CRAY XD225V","HPE CRAY SC XD225V", "HPE CRAY XD295V","HPE CRAY SC XD295V", "HPE CRAY XD665", "HPE CRAY XD675",  "HPE CRAY SC XD665", "HPE CRAY SC XD675 DLC", "HPE CRAY SC XD675"]
 
 #to get inventory, update
@@ -23,6 +23,8 @@ partial_models={}
 #{"HPE CRAY XD675": "XD675", "HPE CRAY XD675 DLC": "XD675", "HPE CRAY XD675 SC": "XD675", "HPE CRAY XD665": "XD665", "HPE CRAY XD665 SC": "XD665", "HPE CRAY XD220v": "XD220"}
 supported_targets={
     "XD675": ["bmc", "bios", "dcscm_fpga", "mb_fpga", "hib_fpga", "gpu"],
+    "MIRAMAR": ["bmc", "bios", "dcscm_fpga", "mb_fpga", "hib_fpga", "gpu"],
+
 }
 
 XD675_targets = ['bmc', 'bios', 'dcscm_fpga', 'mb_fpga', 'hib_fpga']
@@ -38,6 +40,11 @@ reboot = {
 
 routing = {
     "XD675": {
+        "dcscm_fpga": "0x30 0x25 0xF 0xD4 0x0 0x00 0x20 0x00 0x00 0x01",
+        "mb_fpga": "0x30 0x25 0xF 0xD2 0x0 0x00 0x20 0x00 0x00 0x01",
+        "hib_fpga": "0x30 0x25 0xF 0x82 0x0 0x00 0x20 0x00 0x00 0x01"
+    },
+    "MIRAMAR": {
         "dcscm_fpga": "0x30 0x25 0xF 0xD4 0x0 0x00 0x20 0x00 0x00 0x01",
         "mb_fpga": "0x30 0x25 0xF 0xD2 0x0 0x00 0x20 0x00 0x00 0x01",
         "hib_fpga": "0x30 0x25 0xF 0x82 0x0 0x00 0x20 0x00 0x00 0x01"
@@ -76,10 +83,10 @@ class CrayRedfishUtils(RedfishUtils):
                 model = response[u'Model'].strip()
             else:
                 return "NA"
-        if model not in partial_models and "XD" in model:
+        if model not in partial_models:
             split_model_array = model.split() #["HPE", "Cray", "XD665"]
             for dum in split_model_array:
-                if "XD" in dum:
+                if any(keyword in dum for keyword in ["XD", "MIRAMAR"]):
                     partial_models[model.upper()]=dum.upper()
         return model
 
@@ -127,7 +134,7 @@ class CrayRedfishUtils(RedfishUtils):
             f.write(to_write)
             f.close()
         model = self.get_model()
-        if "XD675" in model.upper():
+        if any(m in model.upper() for m in supported_models):
             power_state = self.power_state()
             if option.upper()=="NA":
                 lis=[IP,model,power_state]
@@ -438,7 +445,7 @@ class CrayRedfishUtils(RedfishUtils):
         try:
             target = config.get('Target','update_target')
             image_path_inputs = {
-                "XD675": config.get('Image', 'update_image_path_XD675'),
+                self.get_model(): config.get('Image', 'update_image_path_XD675'),
                 }
         except:
             pass
@@ -539,3 +546,4 @@ class CrayRedfishUtils(RedfishUtils):
                         lis=[IP,model,bef_ver,aft_ver,update_status]
                     new_data=",".join(lis)
                     return {'ret': True,'changed': True, 'msg': str(new_data)}
+                
