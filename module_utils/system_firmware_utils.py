@@ -353,14 +353,14 @@ class CrayRedfishUtils(RedfishUtils):
                 self.power_off()
             headers = {'Content-Type': 'application/octet-stream', 'Filename': 'oem.bin'}
             with open(image_path, 'rb') as image_path_rb:
-                upload_uri = "/redfish/v1/Managers/Wistron/UploadFile"
+                upload_uri = "/redfish/v1/Managers/bmc/Oem/OemManagement/UploadFile"
                 response = self.post_multi_request(self.root_uri + upload_uri, headers=headers, payload=image_path_rb)
                 if response is False:
                     update_status="failed_Post_Image_Upload"
                     after_version="NA"
                 else:
                     #Trigger target update
-                    trigger_uri = "/redfish/v1/Managers/Wistron/OEMUpdate"
+                    trigger_uri = "/redfish/v1/Managers/bmc/Oem/OemManagement/OEMUpdate"
                     if "fpga" in target:
                         updated_target = target.replace("_","-")
                         update_device = {"updateDevice": updated_target}
@@ -375,7 +375,7 @@ class CrayRedfishUtils(RedfishUtils):
                         time.sleep(600)
                         #Check CPLD update status
                         if "fpga" in target:
-                            check_uri = "/redfish/v1/Managers/Wistron/OEMUpdate/CheckStatus"
+                            check_uri = "/redfish/v1/Managers/bmc/Oem/OemManagement/OEMUpdate/CheckStatus"
                             status_response = self.get_request(self.root_uri + check_uri)
                             if status_response['ret'] is False:
                                 update_status="Check status api not found"
