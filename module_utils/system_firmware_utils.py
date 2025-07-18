@@ -270,13 +270,13 @@ class CrayRedfishUtils(RedfishUtils):
             self.power_off()
             headers = {'Filename': 'amdfw.pldm'}
             with open(image_path, 'rb') as image_path_rb:
-                upload_uri = "/redfish/v1/Managers/Wistron/UploadFile"
+                upload_uri = "/redfish/v1/Managers/bmc/Oem/OemManagement/UploadFile"
                 response = self.post_multi_request(self.root_uri + upload_uri, headers=headers, payload=image_path_rb)
                 if response is False:
                     update_status="failed_Post_Image_Upload"
                 else:
                     #Trigger MI300x GPU update
-                    trigger_uri = "/redfish/v1/Managers/bmc/Oem/Wistron/GPU/FwUpdate"
+                    trigger_uri = "/redfish/v1/Managers/bmc/Oem/OemManagement/GPU/FwUpdate"
                     trigger_response = self.post_multi_request(self.root_uri + trigger_uri, headers={}, payload=json.dumps({}))
                     if trigger_response is False:
                         update_status="failed_Post_Trigger_update"
@@ -284,7 +284,7 @@ class CrayRedfishUtils(RedfishUtils):
                         #add time.sleep (for BMC to comeback after flashing )
                         time.sleep(600)
                         #Check GPU update status
-                        check_uri = "/redfish/v1/Managers/bmc/Oem/Wistron/GPU/UpdateStatus"
+                        check_uri = "/redfish/v1/Managers/bmc/Oem/OemManagement/GPU/UpdateStatus"
                         status_response = self.get_request(self.root_uri + check_uri)
                         if status_response['ret'] is False:
                             update_status="Check status api not found"
